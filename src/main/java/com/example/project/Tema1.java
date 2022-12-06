@@ -13,12 +13,14 @@ public class Tema1 {
 			return;
 		}
 
+		// set up database
 		DataBase dataBase = new DataBase();
 		FileOp.readUserFromFile(dataBase);
 		FileOp.readQuestionFromFile(dataBase);
 		FileOp.readQuizzFromFile(dataBase);
 		FileOp.readSolutionFromFile(dataBase);
 
+		// command line
 		switch (args[0]) {
 			case "-create-user":
 				Command.createUser(args, dataBase);

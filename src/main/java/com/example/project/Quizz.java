@@ -2,34 +2,29 @@ package com.example.project;
 
 import java.util.ArrayList;
 
-import java.math.RoundingMode;
 import java.text.DecimalFormat;
-
-import static java.lang.Math.round;
 
 public class Quizz {
 
     private int id;
     private int ownerID;
-    private String name;
-    public int numberOfQuestions;
-    public ArrayList<Question> questions = new ArrayList<>();
-    public ArrayList<User> userHasAnswered = new ArrayList<>();
+    private final String name;
+    protected int numberOfQuestions;
+    protected ArrayList<Question> questions = new ArrayList<>();
+    protected ArrayList<User> userHasAnswered = new ArrayList<>();
 
-    public Quizz(String name) {
+    protected Quizz(String name) {
         this.name = name;
     }
 
-    public Quizz(int id, String name, int numberOfQuestions, int ownerID) {
+    protected Quizz(int id, String name, int numberOfQuestions, int ownerID) {
         this.id = id;
         this.name = name;
         this.numberOfQuestions = numberOfQuestions;
         this.ownerID = ownerID;
     }
 
-    public Quizz(){}
-
-    public int getId() {
+    protected int getId() {
         return id;
     }
 
@@ -58,7 +53,6 @@ public class Quizz {
             if (alreadyExists == 0)
                 return;
         }
-
     }
 
     public void setOwnerID(DataBase dataBase, User user) {
@@ -71,23 +65,101 @@ public class Quizz {
     }
 
     // check whether quizz name already exists in the database
-    public static boolean checkQuizName(String quiz_name, DataBase dataBase) {
+    public static boolean checkQuizName(String quizName, DataBase dataBase) {
         for (Quizz quizz : dataBase.quizz) {
-            if (quizz.name.equals(quiz_name))
+            if (quizz.name.equals(quizName))
                 return false;
         }
         return true;
     }
 
+    // add the desired questions to the quiz
+    public boolean addQuestionsToQuizz(String[] args, DataBase dataBase) {
+        for (int i = 4; i < args.length; i++) {
+            String[] arrOfStrings = args[i].split("'", 0);
+            int questionId = Integer.parseInt(arrOfStrings[1]);
+            int found = 0;
+            for (Question question : dataBase.questions) {
+                if (question.getId() == questionId) {
+                    this.questions.add(question);
+                    this.numberOfQuestions++;
+                    found = 1;
+                    break;
+                }
+            }
+            if (found == 0) {
+                System.out.println("{ 'status' : 'error', 'message' : 'Question ID for question " + (i - 3) + " does not exist'}");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static Quizz createQuiz(String[] args, DataBase dataBase) {
+        if (args.length > 14) {
+            System.out.println("{ 'status' : 'error', 'message' : 'Quizz has more than 10 questions'}");
+            return null;
+        }
+
+        // get quizz name
+        String[] arrOfStrings = args[3].split("'", 0);
+        String quizzName = arrOfStrings[1];
+        boolean check = Quizz.checkQuizName(quizzName, dataBase);
+        if (!check) {
+            System.out.println("{ 'status' : 'error', 'message' : 'Quizz name already exists'}");
+            return null;
+        }
+
+        return new Quizz(quizzName);
+    }
+
+    // checks if the quiz that is trying to be submitted meets all the desired conditions
+    // if all conditions are met, then return the reference of the quizz
+    public static Quizz checkSubmittedQuizConditions(String[] args, DataBase dataBase) {
+        if (args.length < 4) {
+            System.out.println("{ 'status' : 'error', 'message' : 'No quizz identifier was provided'}");
+            return null;
+        }
+
+        // take quizz id
+        String str = args[3];
+        String[] arrOfStrings = str.split("'", 0);
+        int quizzID = Integer.parseInt(arrOfStrings[1]);
+        // check existence of quizz
+        Quizz quizz = Quizz.returnQuizzByID(quizzID, dataBase);
+        // quiz id is not correct
+        if (quizz == null) {
+            System.out.println("{ 'status' : 'error', 'message' : 'No quiz was found'}");
+            return null;
+        }
+
+        // the user that created a quiz cannot answer it
+        // search for the id of the currently logged-in user
+        User currentUser = User.currentUser(args, dataBase);
+        if (currentUser.getId() == quizz.getOwnerID()) {
+            System.out.println("{ 'status' : 'error', 'message' : 'You cannot answer your own quizz'}");
+            return null;
+        }
+
+        // check if this user has already submitted this quiz
+        boolean check = quizz.checkIfUserCompletedThisQuizz(currentUser);
+        if (check) {
+            // user has already answered this quiz
+            System.out.println("{ 'status' : 'error', 'message' : 'You already submitted this quizz'}");
+            return null;
+        }
+        return quizz;
+    }
+
     // used by readQuizzFromFile function
-    public void addQuestionToQuizzFromFile(DataBase dataBase, int question_id) {
+    public void addQuestionToQuizzFromFile(DataBase dataBase, int questionID) {
         for (Question question : dataBase.questions) {
-            if (question.getId() == question_id)
+            if (question.getId() == questionID)
                 this.questions.add(question);
         }
     }
 
-    // gets the id of a quizz and searchs for it in the quizz ArrayList
+    // gets the id of a quizz and searches for it in the quizz ArrayList
     public static Quizz returnQuizzByID(int quizzID, DataBase dataBase) {
         for (Quizz quizz : dataBase.quizz) {
             if (quizz.id == quizzID)

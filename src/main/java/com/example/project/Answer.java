@@ -2,10 +2,10 @@ package com.example.project;
 
 public class Answer {
 
-    public static int noAnswers = 0;
-    public double points; // between -1 and 1
-    private int id;
-    private String text;
+    protected static int noAnswers = 0;
+    protected double points; // between -1 and 1
+    protected int id;
+    protected String text;
 
     enum AnswerType {
         CORRECT,
@@ -54,4 +54,9 @@ public class Answer {
                 ", type=" + type +
                 '}';
     }
+
+    public static void addAnswer() {
+        noAnswers++;
+    }
+
 }

@@ -3,13 +3,15 @@ package com.example.project;
 import java.io.*;
 
 public class FileOp {
-    private static String pathToData = "src/main/data/";
-    private static File userFile = new File(pathToData + "users.csv");
-    private static File questionFile = new File(pathToData + "questions.csv");
 
-    private static File quizzFile = new File(pathToData + "quizz.csv");
+    // path to files
+    private static final String pathToData = "src/main/data/";
+    private static final File userFile = new File(pathToData + "users.csv"); // users file
+    private static final File questionFile = new File(pathToData + "questions.csv"); // questions file
 
-    private static File solutionFile = new File(pathToData + "solution.csv");
+    private static final File quizzFile = new File(pathToData + "quizz.csv"); // quizz file
+
+    private static final File solutionFile = new File(pathToData + "solution.csv"); // user's solutions file
     public static void readUserFromFile(DataBase dataBase) {
 
         try {
@@ -21,11 +23,11 @@ public class FileOp {
             for (String line; (line = br.readLine()) != null; ) {
 
                 String[] str = line.split(",", 0);
-                int user_id = Integer.parseInt(str[0]);
-                String user_name = str[1];
-                String user_password = str[2];
-                User user = new User(user_name, user_password, user_id);
-                int arraySize = Integer.parseInt(str[3]);
+                int userID = Integer.parseInt(str[0]);
+                String username = str[1];
+                String userPassword = str[2];
+                User user = new User(username, userPassword, userID);
+                int arraySize = Integer.parseInt(str[3]); // indicates how many quizzes this user has answered
                 for (int i = 4; i < arraySize; i+=2) {
                     int quizzID = Integer.parseInt(str[i]);
                     Quizz quizz = Quizz.returnQuizzByID(quizzID, dataBase);
@@ -52,20 +54,20 @@ public class FileOp {
         try (BufferedReader br = new BufferedReader(new FileReader(questionFile))) {
             for (String line; (line = br.readLine()) != null; ) {
                 String[] str = line.split(",", 0);
-                int question_id = Integer.parseInt(str[0]);
-                String question_text = str[1];
-                String question_type = str[2];
-                Question question = new Question(question_text, question_type, question_id);
+                int questionID = Integer.parseInt(str[0]);
+                String questionText = str[1];
+                String questionType = str[2];
+                Question question = new Question(questionText, questionType, questionID);
                 if (str.length > 4) {
-                    int answer_no = Integer.parseInt(str[3]);
-                    for (int i = 0; i < answer_no * 4; i += 4) {
-                        String answer_text = str[i + 4];
-                        int answer_id = Integer.parseInt(str[i+5]);
-                        double answer_points = Double.parseDouble(str[i+6]);
-                        int answer_type = Integer.parseInt(str[i+7]);
-                        Answer answer = new Answer(answer_id, answer_text);
-                        answer.points = answer_points;
-                        if (answer_type == 1)
+                    int answerNo = Integer.parseInt(str[3]); // indicates how many answers we are going to read
+                    for (int i = 0; i < answerNo * 4; i += 4) {
+                        String answerText = str[i + 4];
+                        int answerID = Integer.parseInt(str[i+5]);
+                        double answerPoints = Double.parseDouble(str[i+6]);
+                        int answerType = Integer.parseInt(str[i+7]);
+                        Answer answer = new Answer(answerID, answerText);
+                        answer.points = answerPoints;
+                        if (answerType == 1)
                             answer.setType(Answer.AnswerType.CORRECT);
                         else answer.setType(Answer.AnswerType.INCORRECT);
                         question.answers.add(answer);
@@ -92,18 +94,18 @@ public class FileOp {
             for (String line; (line = br.readLine()) != null; ) {
 
                 String[] str = line.split(",", 0);
-                int quizz_id = Integer.parseInt(str[0]);
-                String quizz_name = str[1];
-                int quizz_numberOfQuestions = Integer.parseInt(str[2]);
-                int user_owner_id = Integer.parseInt(str[3]);
-                int user_already_answered_size = Integer.parseInt(str[4]);
-                Quizz quizz = new Quizz(quizz_id, quizz_name, quizz_numberOfQuestions, user_owner_id);
-                for (int i = 0; i < quizz_numberOfQuestions; i++) {
+                int quizzId = Integer.parseInt(str[0]);
+                String quizzName = str[1];
+                int quizzNumberOfQuestions = Integer.parseInt(str[2]);
+                int userOwnerId = Integer.parseInt(str[3]);
+                int userAlreadyAnsweredSize = Integer.parseInt(str[4]);
+                Quizz quizz = new Quizz(quizzId, quizzName, quizzNumberOfQuestions, userOwnerId);
+                for (int i = 0; i < quizzNumberOfQuestions; i++) {
                     int question_id = Integer.parseInt(str[5+i]);
                     quizz.addQuestionToQuizzFromFile(dataBase, question_id);
                 }
-                for (int i = 0; i < user_already_answered_size; i++) {
-                    int userAnsweredID = Integer.parseInt(str[5+quizz_numberOfQuestions+i]);
+                for (int i = 0; i < userAlreadyAnsweredSize; i++) {
+                    int userAnsweredID = Integer.parseInt(str[5+quizzNumberOfQuestions+i]);
                     quizz.userHasAnsweredThisQuizz(userAnsweredID, dataBase);
                 }
                 dataBase.quizz.add(quizz);
@@ -115,6 +117,7 @@ public class FileOp {
         }
     }
 
+    // remembers what quizzes have been answered by each user and the score
     public static void readSolutionFromFile(DataBase dataBase) {
 
         try {
@@ -126,13 +129,13 @@ public class FileOp {
             for (String line; (line = br.readLine()) != null; ) {
 
                 String[] str = line.split(",", 0);
-                int user_id = Integer.parseInt(str[0]);
-                int quizz_id = Integer.parseInt(str[1]);
+                int userId = Integer.parseInt(str[0]);
+                int quizzId = Integer.parseInt(str[1]);
                 int score = Integer.parseInt(str[2]);
-                User user = User.getUserByID(user_id, dataBase);
-                Quizz quizz = Quizz.returnQuizzByID(quizz_id, dataBase);
-                user.answeredQuizz.add(quizz);
-                quizz.userHasAnswered.add(user);
+                User user = User.getUserByID(userId, dataBase);
+                Quizz quizz = Quizz.returnQuizzByID(quizzId, dataBase);
+                user.answeredQuizz.add(quizz); // add this quizz to the user's answered quizzes array
+                quizz.userHasAnswered.add(user); // add this user to the quizz's array of users that have answered it
                 user.quizzResults.add(score);
             }
         } catch (FileNotFoundException e) {
@@ -142,6 +145,8 @@ public class FileOp {
         }
     }
 
+    // for each user write its id, username, password and number of answered quizzes
+    // then for each answered quizz, write its id and score
     public static void writeUsersToFile(DataBase dataBase) {
         try (FileWriter fw = new FileWriter(userFile, false);
              BufferedWriter bw = new BufferedWriter(fw);
@@ -152,6 +157,7 @@ public class FileOp {
                  int j = 0;
                  for (Quizz quizz : ref.answeredQuizz) {
                      out.print(quizz.getId() + "," + ref.answeredQuizz.get(j) + ",");
+                     j++;
                  }
                  out.println("");
              }
@@ -161,13 +167,14 @@ public class FileOp {
         }
     }
 
+    // for each question, write to file its id, text, type and number of answers
+    // then, for each answer write its text, id, points and type
     public static void writeQuestionsToFile(DataBase dataBase) {
         try (FileWriter fw = new FileWriter(questionFile, false);
              BufferedWriter bw = new BufferedWriter(fw);
              PrintWriter out = new PrintWriter(bw)) {
             for (int i = 0; i < dataBase.questions.size(); i++) {
                 Question ref =  dataBase.questions.get(i);
-                // TODO
                 out.print(ref.getId() + ","+ ref.getText() + "," + ref.getType() + "," + ref.answers.size() + ",");
                 for (Answer answer : ref.answers) {
                     out.print(answer.getText() + "," + answer.getId() + "," + answer.points + ",");
@@ -183,6 +190,9 @@ public class FileOp {
         }
     }
 
+    // for each quizz, write to file its id, name, number of questions, ownerID and number of users that have answered it
+    // then, for each question write its id
+    // then write the id of all of the users that have answered it
     public static void writeQuizzToFile(DataBase dataBase) {
         try (FileWriter fw = new FileWriter(quizzFile, false);
              BufferedWriter bw = new BufferedWriter(fw);
@@ -204,6 +214,7 @@ public class FileOp {
         }
     }
 
+    // for each time that a quizz has been submitted, write its id, the user's that submitted it id and the score
     public static void writeSolutionToFile(DataBase dataBase) {
         try (FileWriter fw = new FileWriter(solutionFile, false);
              BufferedWriter bw = new BufferedWriter(fw);
