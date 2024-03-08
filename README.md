@@ -1,4 +1,4 @@
-# TEMA 1 POO
+# Quiz-Generator
 
 ## Cerinta 
 
